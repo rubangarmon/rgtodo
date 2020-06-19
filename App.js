@@ -1,71 +1,144 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-} from "react-native";
-import TodoList from "./src/TodoList";
-import Icon from "react-native-vector-icons/Feather";
+import React, { useEffect } from "react";
+import { StyleSheet, Text, View, Button, TextInput } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
 
-export default function App() {
-  const [value, setValue] = useState("");
-  const [todos, setTodos] = useState([]);
+import TodoListComponent from "./src/TodoListComponent";
 
-  const addTodo = () => {
-    if (value.length > 0) {
-      setTodos([...todos, { text: value, key: Date.now(), checked: false }]);
-      setValue("");
+const Stack = createStackNavigator();
+
+function HomeScreen({ navigation, route }) {
+  useEffect(() => {
+    if (route.params?.post) {
+      console.log("hello luka");
     }
-  };
-
-  const checkTodo = (id) => {
-    setTodos(
-      todos.map((todo) => {
-        if (todo.key === id) todo.checked = !todo.checked;
-        return todo;
-      })
-    );
-  };
-
-  const deleteTodo = (id) => {
-    setTodos(
-      todos.filter((todo) => {
-        if (todo.key !== id) return true;
-      })
-    );
-  };
+  }, [route.params?.post]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Todo List</Text>
-      <View style={styles.textInputContainer}>
-        <TextInput
-          style={styles.textInput}
-          multiline={true}
-          placeholder="What do you want to do today?"
-          placeholderTextColor="#abbabb"
-          value={value}
-          onChangeText={(value) => setValue(value)}
-        />
-        <TouchableOpacity onPress={() => addTodo()}>
-          <Icon name="plus" size={30} color="blue" style={{ marginLeft: 15 }} />
-        </TouchableOpacity>
-      </View>
-      <ScrollView style={{ width: "100%" }}>
-        {todos.map((item) => (
-          <TodoList 
-            text={item.text} 
-            key={item.key} 
-            checked= {item.checked}
-            setChecked={() => checkTodo(item.key)}
-            deleteTodo={() => deleteTodo(item.key)}
-          />
-        ))}
-      </ScrollView>
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <Text>Home Screen</Text>
+      <Button
+        title="Create post"
+        onPress={() => navigation.navigate("CreatePost")}
+      />
+      <Button
+        title="Go details"
+        onPress={() =>
+          navigation.navigate("Details", {
+            itemId: 86,
+            otherParam: "anything you want here",
+          })
+        }
+      />
+      <Text style={{ margin: 10 }}>Post: {route.params?.post}</Text>
     </View>
+  );
+}
+
+function CreatePostScreen({ navigation, route }) {
+  const [postText, setPostText] = React.useState("");
+
+  return (
+    <>
+      <TextInput
+        multiline
+        placeholder="What's on your mind?"
+        style={{ height: 200, padding: 10, backgroundColor: "white" }}
+        value={postText}
+        onChangeText={setPostText}
+      />
+      <Button
+        title="Done"
+        onPress={() => {
+          // Pass params back to home screen
+          navigation.navigate("Home", { post: postText, name: "Crea tu post" });
+        }}
+      />
+    </>
+  );
+}
+
+function DetailsScreen({ navigation, route }) {
+  const { itemId, otherParam } = route.params;
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <Text>Details Screen</Text>
+      <Text>itemId: {JSON.stringify(itemId)}</Text>
+      <Text>otherParam: {JSON.stringify(otherParam)}</Text>
+      <Button
+        title="Go to Details... again"
+        onPress={() =>
+          navigation.push("Details", {
+            itemId: Math.floor(Math.random() * 100),
+          })
+        }
+      />
+      <Button
+        title="Go to Home"
+        onPress={() =>
+          navigation.navigate("Home", { name: "estos son los detalles" })
+        }
+      />
+      <Button title="Go back" onPress={() => navigation.goBack()} />
+      <Button
+        title="Go back to first screen in stack"
+        onPress={() => navigation.popToTop()}
+      />
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName="Home"
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: "#3e84e0",
+          },
+          headerTintColor: "#fff",
+          headerTitleStyle: {
+            fontWeight: "bold",
+          },
+        }}
+      >
+        <Stack.Screen
+          name="Todo"
+          component={TodoListComponent}
+          options={{ title: "Overview" }}
+        />
+        <Stack.Screen
+          name="Details"
+          component={DetailsScreen}
+          initialParams={{ itemId: 42 }}
+          options={({ route }) => ({
+            title: route.params.name,
+            // headerStyle: {
+            //   backgroundColor: '#f4511e',
+            // },
+            // headerTintColor: '#fff',
+            // headerTitleStyle: {
+            //   fontWeight: 'bold',
+            // },
+          })}
+        />
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={({ route }) => ({ title: route.params.name })}
+        />
+        {/* <Stack.Screen name="CreatePost" component={CreatePostScreen} options={({route}) => ({title: route.params.name})} />   */}
+        <Stack.Screen
+          name="CreatePost"
+          component={CreatePostScreen}
+          options={({ route }) => {
+            console.dir(route);
+            return { title: "many" };
+          }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
@@ -75,29 +148,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "center",
     backgroundColor: "#F5FCFF",
-    padding: 15
-  },
-  header: {
-    marginTop: "15%",
-    fontSize: 20,
-    color: "red",
-    paddingBottom: 10,
-  },
-  textInputContainer: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    borderColor: "black",
-    borderBottomWidth: 1,
-    paddingRight: 10,
-    paddingBottom: 10,
-  },
-  textInput: {
-    flex: 1,
-    height: 20,
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "black",
-    paddingLeft: 10,
-    minHeight: "3%",
+    // padding: 50
   },
 });
